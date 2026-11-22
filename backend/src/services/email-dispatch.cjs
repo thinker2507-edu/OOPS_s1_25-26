@@ -1,6 +1,10 @@
 'use strict';
 const { randomUUID } = require('node:crypto');
 const { now } = require('../domain/index.cjs');
+const NOTIFICATION_SCOPE = {
+  collections: ['notifications', 'users', 'incidents', 'services', 'categories', 'subcategories', 'incident_types'],
+  writeCollections: ['notifications']
+};
 // Claim in MongoDB, send outside the transaction, then acknowledge. Delivery is at least once.
 async function dispatchEmail(repo, mailer, logger = () => {
 }) {
@@ -30,7 +34,7 @@ async function dispatchEmail(repo, mailer, logger = () => {
         ...row,
         email: user.email
       };
-    });
+    }, NOTIFICATION_SCOPE);
     if (!item) {
       break;
     }
@@ -46,14 +50,14 @@ async function dispatchEmail(repo, mailer, logger = () => {
       await repo.transaction(r => r.update('notifications', n => n.id === item.id && n.delivery_claim === claim, {
         sent_at: now(),
         delivery_status: 'sent'
-      }));
+      }), NOTIFICATION_SCOPE);
     }
     catch {
       logger('Incident email delivery failed; queued for retry.');
       await repo.transaction(r => r.update('notifications', n => n.id === item.id && n.delivery_claim === claim, {
         delivery_status: 'retry',
         retry_at: now() + 300
-      }));
+      }), NOTIFICATION_SCOPE);
     }
   }
 }

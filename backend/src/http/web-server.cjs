@@ -9,7 +9,7 @@ const {
   Forbidden,
   now,
   safeEqual,
-  passwordMatches,
+  passwordMatchesAsync,
   integer
 } = require("../domain/index.cjs");
 const { Authentication, loopback } = require("../integrations/google-auth.cjs");
@@ -18,6 +18,7 @@ const { apiContract } = require('./api-contract.cjs');
 const { listIncidents } = require('../services/incident-list.cjs');
 const { PasswordRecovery } = require('../services/password-recovery.cjs');
 const { rateLimit } = require('../services/rate-limit.cjs');
+const { NotificationStream } = require('./notification-stream.cjs');
 const PAGE = /^\/(?:login|register|forgot-password|reset-password|overview|support-requests|incidents(?:\/(?:new|mine|reported|\d+(?:\/(?:conversation|resolution|activity))?))?|reports(?:\/(?:overview|workload|services|audit|sla))?|notifications(?:\/(?:inbox|email))?|admin(?:\/(?:users|technicians|services|categories|policies|assignment))?|settings(?:\/(?:account|accessibility|system|api))?)\/?$/;
 class WebServer {
   constructor(service, config, root, {
@@ -40,6 +41,7 @@ class WebServer {
     this.instanceId = instanceId;
     this.started = now();
     this.assets = new FrontendAssets(root);
+    this.notificationStream = new NotificationStream(service, req => this.session(req, false));
     this.server = http.createServer((req, res) => this.handle(req, res));
     this.server.requestTimeout = 15000;
     this.server.headersTimeout = 10000;
@@ -55,6 +57,7 @@ class WebServer {
     });
   }
   async close() {
+    this.notificationStream.close();
     if (!this.server.listening) {
       return;
     }
@@ -119,7 +122,13 @@ class WebServer {
         email: u.email,
         role: u.role
       } : null;
-    }, { collections: ['sessions', 'users'] });
+    }, {
+      collections: ['sessions', 'users'],
+      queries: {
+        sessions: { filter: { token } },
+        users: { projection: { password: 0 } }
+      }
+    });
     if (!session && required) {
       throw new AppError('Please sign in.', 401);
     }
@@ -162,6 +171,7 @@ class WebServer {
       'Cache-Control': 'no-store',
       'Content-Security-Policy': "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
       'Content-Length': body.length,
+      'Server-Timing': 'app;dur=' + Math.max(0, performance.now() - (res.relayStarted || performance.now())).toFixed(1),
       ...headers
     });
     res.end(body);
@@ -208,6 +218,7 @@ class WebServer {
     return data;
   }
   async handle(req, res) {
+    res.relayStarted = performance.now();
     let url;
     try {
       url = new URL(req.url, 'http://localhost');
@@ -247,6 +258,13 @@ class WebServer {
         if (url.pathname.startsWith('/api/')) {
           const session = await this.session(req);
           const user = this.user(session);
+          if (url.pathname === '/api/notifications/stream') {
+            this.checkOrigin(req);
+            return this.notificationStream.open(req, res, session);
+          }
+          if (url.pathname === '/api/notifications') {
+            return this.respond(res, 200, await this.service.notificationFeed(user));
+          }
           if (url.pathname === '/api/openapi.json') {
             if (user.role !== 'admin') {
               throw new Forbidden();
@@ -288,9 +306,13 @@ class WebServer {
           }
           if (/^\/api\/attachments\/\d+$/.test(url.pathname)) {
             const file = await this.service.attachment(user, integer({ id: url.pathname.split('/').pop() }, 'id', 1, 999999999));
+            const preview = url.searchParams.get('preview') === '1';
+            if (preview && !['image/png', 'image/jpeg'].includes(file.mime)) {
+              throw new AppError('Browser preview is available for PNG and JPEG images. Please download this file to view it.', 415);
+            }
             return this.respond(res, 200, Buffer.from(file.data, 'base64'), {
               'Content-Type': file.mime,
-              'Content-Disposition': "attachment; filename=\"attachment-" + file.id + "\"; filename*=UTF-8''" + encodeURIComponent(file.name).replace(/['()*]/g, c => '%' + c.charCodeAt(0).toString(16)),
+              'Content-Disposition': (preview ? 'inline' : 'attachment') + "; filename=\"attachment-" + file.id + "\"; filename*=UTF-8''" + encodeURIComponent(file.name).replace(/['()*]/g, c => '%' + c.charCodeAt(0).toString(16)),
               'X-Content-Type-Options': 'nosniff'
             });
           }
@@ -378,8 +400,10 @@ class WebServer {
         if (typeof email !== 'string' || typeof password !== 'string' || password.length > 128) {
           throw new InvalidLoginError();
         }
-        const user = await repo.read(r => r.one('users', u => u.email === email.toLowerCase().trim() && u.active));
-        if (!user || !passwordMatches(password, user.password)) {
+        const normalizedEmail = email.toLowerCase().trim();
+        const user = await repo.read(r => r.one('users', u => u.email === normalizedEmail && u.active), { collections: ['users'], queries: { users: { filter: { email: normalizedEmail, active: { $in: [1, true] } } } } });
+        const matches = await passwordMatchesAsync(password, user?.password || '0'.repeat(32) + ':' + '0'.repeat(64));
+        if (!user || !matches) {
           throw new InvalidLoginError();
         }
         // Request-supplied roles are ignored. Stored account role is authoritative.
@@ -394,7 +418,7 @@ class WebServer {
         return this.respond(res, 200, result, { 'Set-Cookie': this.cookie('itsm_session', '', 'Strict', 0) });
       }
       if (route === '/api/logout') {
-        await repo.transaction(r => r.remove('sessions', s => s.token === session.token));
+        await repo.transaction(r => r.remove('sessions', s => s.token === session.token), { collections: ['users', 'sessions'], writeCollections: ['sessions'] });
         return this.respond(res, 200, { ok: true }, { 'Set-Cookie': this.cookie('itsm_session', '', 'Strict', 0) });
       }
       if (route === '/api/incidents') {
@@ -412,7 +436,7 @@ class WebServer {
         return this.respond(res, 200, await this.service.admin(user, data));
       }
       if (route === '/api/notifications/read') {
-        await repo.transaction(r => r.update('notifications', n => n.user_id === user.id, { is_read: 1 }));
+        await this.service.markNotificationsRead(user);
         return this.respond(res, 200, { ok: true });
       }
       if (route === '/api/system/stop') {

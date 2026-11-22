@@ -16,7 +16,7 @@ async function rateLimit(repo, identity, maximum = 20, seconds = 60) {
       expires: row?.expires || time + seconds
     });
     return true;
-  });
+  }, { collections: ['rate_limits'], writeCollections: ['rate_limits'] });
   if (!accepted) {
     throw new AppError('Too many attempts. Try again in a minute.', 429);
   }

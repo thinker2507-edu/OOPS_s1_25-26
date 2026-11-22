@@ -81,22 +81,40 @@ export function AttachmentForm({
     </div>
   </form>;
 }
+function Attachment({ file }) {
+  const [failed, setFailed] = useState(false);
+  const image = ['image/png', 'image/jpeg'].includes(file.mime);
+  const download = '/api/attachments/' + file.id;
+  const preview = download + '?preview=1';
+  return <li className="attachment-item">
+    {image && !failed && <a
+      href={preview}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="attachment-preview"
+      aria-label={'View ' + file.name + ' (opens in a new tab)'}
+    >
+      <img
+        src={preview}
+        alt={'Incident attachment: ' + file.name}
+        loading="lazy"
+        decoding="async"
+        onError={() => setFailed(true)}
+      />
+    </a>}
+    <div className="attachment-actions">
+      {image ? <span>{file.name}</span> : <a href={download} download>{file.name}</a>}
+      <small>{' - ' + Math.ceil(file.size / 1024) + ' KB'}</small>
+      {image && <>
+        <a href={preview} target="_blank" rel="noopener noreferrer">View image<span className="sr-only">: {file.name} (opens in a new tab)</span></a>
+        <a href={download} download aria-label={'Download ' + file.name}>Download</a>
+      </>}
+    </div>
+    {image && failed && <p className="help" role="status">The image preview could not be loaded. You can still try opening or downloading the file.</p>}
+  </li>;
+}
 export function Attachments({ attachments = [] }) {
-  return attachments.length > 0 && <ul
-    className="attachment-list"
-    aria-label="Supporting attachments"
-  >
-    {attachments.map(file => <li key={file.id}>
-      <a
-        href={'/api/attachments/' + file.id}
-        download
-      >
-        {file.name}
-      </a>
-      <small>
-
-        {' · ' + Math.ceil(file.size / 1024) + ' KB'}
-      </small>
-    </li>)}
+  return attachments.length > 0 && <ul className="attachment-list" aria-label="Supporting attachments">
+    {attachments.map(file => <Attachment key={file.id} file={file} />)}
   </ul>;
 }

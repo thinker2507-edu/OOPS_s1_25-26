@@ -54,6 +54,6 @@ async function listIncidents(service, user, query = {}) {
       per_page: perPage,
       pages: Math.ceil(rows.length / perPage)
     };
-  });
+  }, { collections: ['incidents'] });
 }
 module.exports = { listIncidents };

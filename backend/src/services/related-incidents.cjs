@@ -5,6 +5,7 @@ function normalize(value) {
   return String(value || '').toLowerCase().normalize('NFKD').replace(/\p{M}/gu, '')
     .replace(/(?:can't|cannot|unable to)\s+(?:make\s+)?(?:a\s+)?(?:payment|pay)(?:\b)|not going through/g, ' payment failure ')
     .replace(/\b(?:(?:credit|debit)\s+card|transactions?|checkout|payments?|billing|paying|purchases?|pay)\b/g, ' payment ')
+    .replace(/\bpayment\s+(?:application|app|platform|portal|system)\b/g, ' payment ')
     .replace(/(?:does|do|is|are)\s+not\s+(?:working|work|complete|process)|(?:can't|cannot|unable to)\s+(?:complete|process)(?:\s+payment)?|not\s+(?:working|processing)|fail(?:ed|ing|ure|ures|s)?|declin(?:ed|ing)|unavailable|unsuccessful|broken|errors?/g, ' failure ')
     .replace(/\b(?:wi[ -]?fi|wireless|wlan|internet|connectivity)\b/g, ' network ')
     .replace(/\b(?:passcodes?|credentials?)\b/g, ' password ')

@@ -42,7 +42,7 @@ class Authentication {
         auth_method: method
       });
       return token;
-    });
+    }, { collections: ['users', 'sessions'], writeCollections: ['sessions'] });
   }
   async startGoogle(mode = 'login', session = null) {
     if (mode === 'link' && session && await this.repo.read(repo => Boolean(repo.one('oauth_identities', identity => identity.provider === 'google' && identity.user_id === session.user_id)))) {

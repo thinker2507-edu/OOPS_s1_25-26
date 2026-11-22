@@ -7,6 +7,7 @@ import { AttachmentForm, Attachments } from "../components/incidents/AttachmentF
 import { IncidentNotes } from "../components/incidents/IncidentNotes.js";
 import { FINISHED_UI } from "../lib/incidents.js";
 import { DeleteIncident } from '../components/admin/CloudControls.js';
+import { PotentialDuplicates } from '../components/incidents/PotentialDuplicates.js';
 function IncidentWorkspace({ incident: i, data, onAction, section, onDelete }) {
   const u = data.user;
   const operator = u.role === 'admin' || u.role === 'technician' && i.technician_id === u.id;
@@ -160,6 +161,8 @@ function IncidentWorkspace({ incident: i, data, onAction, section, onDelete }) {
     </nav>
 
 
+
+    {u.role === 'technician' && ['overview', 'conversation'].includes(section) && <PotentialDuplicates incident={i} />}
 
     {section === 'overview' && <div className="detail-grid">
 
@@ -439,64 +442,6 @@ function IncidentWorkspace({ incident: i, data, onAction, section, onDelete }) {
 
       </Card>
 
-      <Card title="Potential duplicates">
-        <p className="help">Suggestions require human review. Reports remain separate.</p>
-
-
-
-        {i.related?.length ? i.related.map(r => <article
-          className="note"
-          key={r.id}
-        >
-
-
-
-          <Link to={'/incidents/' + r.id}>
-
-
-
-            {incId(r.id) + ' · ' + r.title}
-
-
-
-          </Link>
-
-
-
-          <p className="help">
-
-
-
-            {r.similarity + '% similarity · ' + (r.reasons || []).join('; ')}
-
-
-
-          </p>
-
-
-
-          {r.resolution && <p>
-
-
-
-            {'Previous resolution: ' + r.resolution}
-
-
-
-          </p>}
-
-
-
-        </article>) : <p className="help">
-
-
-
-          No related reports are available in this view.
-        </p>}
-
-
-
-      </Card>
       <Card title="Service and component correlations">
         <p className="help">Incidents close in time with shared dependencies. A connection does not confirm a root cause.</p>
         {i.correlations?.length ? i.correlations.map(r => <article className="note" key={r.id}>

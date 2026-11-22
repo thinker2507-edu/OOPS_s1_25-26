@@ -10,6 +10,7 @@ class MongoRepository {
     this.context = new AsyncLocalStorage();
     this.queue = Promise.resolve();
     this.scopedReads = new Set();
+    this.commitListeners = new Set();
     this.provider = 'mongodb';
   }
   static async connect(config) {
@@ -75,16 +76,30 @@ class MongoRepository {
   upsert(...args) {
     return this.active().upsert(...args);
   }
-  transaction(operation) {
-    return this.perform(operation, true);
+  transaction(operation, { collections = Object.keys(KEYS), writeCollections = collections } = {}) {
+    if (!Array.isArray(collections) || collections.some(table => !Object.hasOwn(KEYS, table)) || !Array.isArray(writeCollections) || writeCollections.some(table => !collections.includes(table))) {
+      throw new Error('Unknown collection in transaction scope.');
+    }
+    return this.perform(operation, true, [...new Set(collections)], { writeCollections });
   }
-  read(operation, { collections = Object.keys(KEYS) } = {}) {
+  read(operation, { collections = Object.keys(KEYS), queries = {} } = {}) {
     if (!Array.isArray(collections) || collections.some(table => !Object.hasOwn(KEYS, table))) {
       throw new Error('Unknown collection in read scope.');
     }
-    return this.perform(operation, false, [...new Set(collections)]);
+    return this.perform(operation, false, [...new Set(collections)], { queries });
   }
-  perform(operation, write, collections = Object.keys(KEYS)) {
+  onCommit(listener) {
+    this.commitListeners.add(listener);
+    return () => this.commitListeners.delete(listener);
+  }
+  publishCommit(collections) {
+    if (!collections.length) return;
+    for (const listener of this.commitListeners) {
+      try { listener(collections); } catch { /* A committed write must not fail because a live client disconnected. */ }
+    }
+  }
+  perform(operation, write, collections = Object.keys(KEYS), { queries = {}, writeCollections = collections } = {}) {
+    let changedTables = [];
     const run = async () => {
       const session = this.client.startSession();
       try {
@@ -94,9 +109,15 @@ class MongoRepository {
           if (write) {
             await this.database.collection('_meta').updateOne({ _id: 'workspace' }, { $inc: { revision: 1 } }, { session });
           }
+          changedTables = [];
           const before = Object.fromEntries(Object.keys(KEYS).map(table => [table, []]));
-          for (const table of collections)
-            before[table] = (await this.database.collection(table).find({}, { session }).toArray()).map(({ _id, ...row }) => row);
+          for (const table of collections) {
+            const query = queries[table] || {};
+            let cursor = this.database.collection(table).find(query.filter || {}, { session, ...(query.projection ? { projection: query.projection } : {}) });
+            if (query.sort) cursor = cursor.sort(query.sort);
+            if (query.limit) cursor = cursor.limit(query.limit);
+            before[table] = (await cursor.toArray()).map(({ _id, ...row }) => row);
+          }
           const store = new DocumentStore(before);
           const result = this.context.run(store, () => operation(this));
           if (result && typeof result.then === 'function') {
@@ -106,6 +127,10 @@ class MongoRepository {
             throw new Error('Cannot mutate a read-only unit of work.');
           }
           if (store.changed) {
+            changedTables = Object.keys(KEYS).filter(table => JSON.stringify(before[table]) !== JSON.stringify(store.state[table]));
+            if (changedTables.some(table => !writeCollections.includes(table))) {
+              throw new Error('Cannot mutate a collection outside the transaction write scope.');
+            }
             store.validate();
             await this.flush(before, store.state, session);
           }
@@ -131,6 +156,7 @@ class MongoRepository {
     // read-only snapshot; writes retain the existing serialization and lock.
     const scoped = !write && collections.length < Object.keys(KEYS).length;
     const task = scoped ? run() : this.queue.then(run);
+    if (write) task.then(() => this.publishCommit(changedTables), () => {});
     if (scoped) {
       this.scopedReads.add(task);
       task.then(() => this.scopedReads.delete(task), () => this.scopedReads.delete(task));

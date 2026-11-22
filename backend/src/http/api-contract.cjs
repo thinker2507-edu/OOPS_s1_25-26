@@ -309,11 +309,11 @@ function apiContract(baseUrl = 'http://127.0.0.1:3000') {
       })
     },
     '/api/attachments/{id}': {
-      get: operation('Ownership-checked attachment download', {
-        parameters: [id],
+        get: operation('Ownership-checked attachment download or image preview', {
+          parameters: [id, parameter('preview', { type: 'string', enum: ['1'], description: 'Set to 1 to view PNG/JPEG images inline; other file types remain download-only.' })],
         responses: {
           '200': {
-            description: 'Attachment download; actual MIME type varies.',
+              description: 'Attachment download or authenticated inline PNG/JPEG preview; actual MIME type varies.',
             content: {
               'application/octet-stream': {
                 schema: {
@@ -403,6 +403,10 @@ function apiContract(baseUrl = 'http://127.0.0.1:3000') {
     },
     '/api/admin/sla': { get: operation('Active/historical SLA breaches', { roles: ['admin'] }) },
     '/api/notifications/read': { post: operation('Mark current user notifications read', { body: object }) },
+    '/api/notifications': { get: operation('Latest notifications for the signed-in user') },
+    '/api/notifications/stream': { get: operation('Authenticated live notification event stream', {
+      responses: { '200': { description: 'SSE notifications snapshots and session-ended events; reconnect automatically after disconnection.', content: { 'text/event-stream': { schema: { type: 'string' } } } } }
+    }) },
     '/api/system': { get: operation('Local server information', { roles: ['admin'] }) },
     '/api/system/stop': {
       post: operation('Stop this local Node instance', {

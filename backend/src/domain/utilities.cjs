@@ -23,6 +23,12 @@ function passwordMatches(password, stored) {
   const [salt, digest] = stored.split(':');
   return safeEqual(digest, crypto.pbkdf2Sync(password, salt, 310000, 32, 'sha256').toString('hex'));
 }
+async function passwordMatchesAsync(password, stored) {
+  if (typeof password !== 'string' || typeof stored !== 'string' || !/^[a-f0-9]{32}:[a-f0-9]{64}$/.test(stored)) return false;
+  const [salt, digest] = stored.split(':');
+  const derived = await new Promise((resolve, reject) => crypto.pbkdf2(password, salt, 310000, 32, 'sha256', (error, result) => error ? reject(error) : resolve(result)));
+  return safeEqual(digest, derived.toString('hex'));
+}
 function fieldLabel(key) {
   const labels = {
     name: 'Name',
@@ -68,6 +74,7 @@ module.exports = {
   safeEqual,
   passwordHash,
   passwordMatches,
+  passwordMatchesAsync,
   text,
   integer
 };

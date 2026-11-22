@@ -3,7 +3,7 @@ import { api } from "../services/api.js";
 import { Card, Button } from "../components/ui.js";
 import { date } from "../lib/format.js";
 import { Link } from "../app/navigation.js";
-function NotificationsPage({ data, refresh, path }) {
+function NotificationsPage({ data, refresh, path, browserNotifications }) {
   const email = path.endsWith('/email');
   const rows = data.notifications.filter(n => email ? ['email_outbox', 'email_simulated'].includes(n.channel) : n.channel === 'in_app');
   return <Card
@@ -33,6 +33,13 @@ function NotificationsPage({ data, refresh, path }) {
         Email outbox
       </Link>
     </nav>
+    {browserNotifications && <section className="browser-notification-settings" aria-label="Browser notification settings">
+      <p className="help">In-app updates arrive live. Browser alerts can also appear while this workspace is open.</p>
+      {browserNotifications.permission === 'default' && <Button onClick={browserNotifications.enable}>Enable browser notifications</Button>}
+      {browserNotifications.permission === 'granted' && <p role="status">Browser notifications are enabled.</p>}
+      {browserNotifications.permission === 'denied' && <p>Browser notifications are blocked. Allow notifications in your browser's site settings to enable them.</p>}
+      {browserNotifications.permission === 'unsupported' && <p>This browser does not support browser alerts here. Live in-app notifications remain available.</p>}
+    </section>}
     {rows.length ? rows.map(n => <article
       key={n.id}
       className={'notification' + (n.is_read ? '' : ' unread')}

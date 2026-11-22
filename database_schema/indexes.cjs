@@ -2,6 +2,11 @@
 const { KEYS } = require('./collections.cjs');
 const INDEXES = [
   {
+    collection: 'notifications',
+    key: { user_id: 1, id: -1 },
+    options: {}
+  },
+  {
     collection: 'password_resets',
     key: {
       user_id: 1,

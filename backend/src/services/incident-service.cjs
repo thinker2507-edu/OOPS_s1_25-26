@@ -407,6 +407,15 @@ class IncidentService {
         related: suggestions.duplicates,
         correlations: suggestions.correlations
       };
+    }, {
+      collections: ['incidents', 'users', 'attachments', 'notes', 'audit', 'support_requests', 'settings', 'components', 'service_components'],
+      queries: {
+        users: { projection: { password: 0 } },
+        attachments: { filter: { incident_id: id }, projection: { data: 0, sha256: 0 } },
+        notes: { filter: { incident_id: id } },
+        audit: { filter: { incident_id: id } },
+        support_requests: { filter: { incident_id: id } }
+      }
     });
   }
   async update(user, id, data) {
@@ -649,7 +658,18 @@ class IncidentService {
     return this.detail(user, id);
   }
   catalog() {
-    return this.repo.read(repo => catalog(repo));
+    return this.repo.read(repo => catalog(repo), { collections: ['services', 'categories', 'subcategories', 'incident_types'] });
+  }
+  notificationFeed(user) {
+    return this.repo.read(repo => ({
+      notifications: repo.list('notifications', row => row.user_id === user.id).sort((a, b) => b.id - a.id).slice(0, 200)
+    }), { collections: ['notifications'], queries: { notifications: { filter: { user_id: user.id }, sort: { id: -1 }, limit: 200 } } });
+  }
+  markNotificationsRead(user) {
+    return this.repo.transaction(repo => repo.update('notifications', row => row.user_id === user.id, { is_read: 1 }), {
+      collections: ['notifications', 'users', 'incidents', 'services', 'categories', 'subcategories', 'incident_types'],
+      writeCollections: ['notifications']
+    });
   }
   requestsFor(user, incidentId = null) {
     const owned = new Set(this.repo.list('incidents', i => this.canView(i, user) && (incidentId === null || i.id === incidentId)).map(i => i.id));
@@ -681,7 +701,7 @@ class IncidentService {
       }
       this.get(row.incident_id, user);
       return row;
-    });
+    }, { collections: ['attachments', 'incidents'], queries: { attachments: { filter: { id } } } });
   }
   monitor() {
     const time = now();
@@ -711,10 +731,12 @@ class IncidentService {
             this.events.publish(repo, i, null, kind, kind.includes('breached') ? 'Detected at ' + new Date(time * 1000).toISOString() + '; deadline was ' + new Date((kind.startsWith('Response') ? i.response_due : i.resolution_due) * 1000).toISOString() + '. Detection may be delayed while hosting sleeps.' : 'Deadline approaching');
           }
       }
+    }, {
+      collections: ['users', 'incidents', 'services', 'categories', 'subcategories', 'incident_types', 'policies', 'service_policies', 'settings', 'audit', 'notifications', 'sla_events'],
+      writeCollections: ['users', 'incidents', 'settings', 'audit', 'notifications', 'sla_events']
     });
   }
   async snapshot(user) {
-    await this.monitor();
     return this.repo.read(repo => {
       const users = repo.list('users');
       const services = repo.list('services');
@@ -758,6 +780,13 @@ class IncidentService {
         result.correlation_minutes = Number(repo.one('settings', s => s.key === 'correlation_minutes')?.value || 60);
       }
       return result;
+    }, {
+      collections: ['users', 'services', 'incidents', 'categories', 'policies', 'settings', 'notifications', 'oauth_identities', 'support_requests', 'notes', 'sla_events', ...(user.role === 'admin' ? ['subcategories', 'incident_types', 'service_policies', 'components', 'service_components'] : [])],
+      queries: {
+        users: { projection: { password: 0 } },
+        notifications: { filter: { user_id: user.id }, sort: { id: -1 }, limit: 200 },
+        oauth_identities: { filter: { user_id: user.id } }
+      }
     });
   }
   addUser(data, role = 'employee') {

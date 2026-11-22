@@ -30,6 +30,7 @@ import { PasswordRecoveryPage } from '../pages/PasswordRecoveryPage.js';
 import { useAccessibility } from "./useAccessibility.js";
 import { ThemeSwitcher } from "../components/ThemeSwitcher.js";
 import { useIncidentDetail } from './useIncidentDetail.js';
+import { useLiveNotifications } from './useLiveNotifications.js';
 function App() {
   const [raw, navigate] = useRoute();
   const path = ({
@@ -46,6 +47,10 @@ function App() {
   const [filters, setFilters] = useState({});
   const [menu, setMenu] = useState(false);
   const [stopped, setStopped] = useState(false);
+  const refreshFlight = useRef(null);
+  const refreshGeneration = useRef(0);
+  const notificationRevision = useRef(0);
+  const toastTimer = useRef(null);
   const { options, setOptions, theme, setTheme } = useAccessibility();
   const requested = useRef(![
     '/',
@@ -64,31 +69,50 @@ function App() {
     version: data?.incidents.find(incident => incident.id === id)?.updated_at
   });
   function notify(message) {
+    clearTimeout(toastTimer.current);
     setToast(message);
-    setTimeout(() => setToast(''), 4500);
+    toastTimer.current = setTimeout(() => setToast(''), 4500);
   }
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+  const liveNotifications = useLiveNotifications({
+    user: stopped ? null : data?.user,
+    notifications: data?.notifications,
+    onUpdate: notifications => { notificationRevision.current++; setData(current => current ? { ...current, notifications } : current); },
+    onAlert: alert => { notify(alert.message); if (!alert.initial && alert.incidentId === id) refreshDetail(); },
+    onExpired: () => refresh(true).catch(() => {})
+  });
   async function refresh(required = false) {
-    try {
-      const next = await api('bootstrap');
-      setCsrfToken(next.csrf);
-      setData(next);
-      setError('');
-      return next;
-    }
-    catch (e) {
-      if (e.status === 401) {
-        setData(null);
+    if (!required && refreshFlight.current) return refreshFlight.current;
+    const generation = ++refreshGeneration.current;
+    const revision = notificationRevision.current;
+    const request = (async () => {
+      try {
+        const next = await api('bootstrap');
+        if (generation !== refreshGeneration.current) return next;
+        setCsrfToken(next.csrf);
+        setData(current => ({ ...next, notifications: revision !== notificationRevision.current && current?.user.id === next.user.id ? current.notifications : next.notifications }));
+        setError('');
+        return next;
       }
-      else {
-        setError(e.message);
+      catch (e) {
+        if (generation !== refreshGeneration.current) return;
+        if (e.status === 401) {
+          setData(null);
+        }
+        else {
+          setError(e.message);
+        }
+        if (required) {
+          throw e;
+        }
       }
-      if (required) {
-        throw e;
+      finally {
+        if (generation === refreshGeneration.current) setLoading(false);
       }
-    }
-    finally {
-      setLoading(false);
-    }
+    })();
+    refreshFlight.current = request;
+    try { return await request; }
+    finally { if (refreshFlight.current === request) refreshFlight.current = null; }
   }
   useEffect(() => {
     refresh();
@@ -152,6 +176,8 @@ function App() {
   async function signOut() {
     try {
       await api('logout', {});
+      refreshGeneration.current++;
+      refreshFlight.current = null;
       setCsrfToken('');
       setToast('');
       setError('');
@@ -379,6 +405,7 @@ function App() {
         data={data}
         refresh={refresh}
         path={path}
+        browserNotifications={liveNotifications}
       />;
     }
     else if (path === '/settings/account') {
@@ -431,6 +458,8 @@ function App() {
       <div className="content">
 
         <Header
+          unread={unread}
+          notifications={liveNotifications}
           theme={theme}
           onThemeChange={setTheme}
           group={group}

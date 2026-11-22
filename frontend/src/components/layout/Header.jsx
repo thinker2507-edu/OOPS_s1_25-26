@@ -8,6 +8,8 @@ export function Header({
   title,
   id,
   onRefresh,
+  unread = 0,
+  notifications,
   theme,
   onThemeChange
 }) {
@@ -33,6 +35,11 @@ export function Header({
       </span>}
     </nav>
     <div className="topbar-actions">
+      <Link to="/notifications/inbox" className="btn small notification-bell" aria-label={'Notifications: ' + unread + ' unread'}>
+        Notifications{unread > 0 && <span className="count">{unread}</span>}
+      </Link>
+      {notifications?.permission === 'default' && <Button className="btn small" onClick={notifications.enable}>Enable alerts</Button>}
+      <span className="sr-only notification-live-status" role="status">{notifications?.connection === 'live' ? 'Live notifications connected' : 'Live notifications reconnecting'}</span>
       <ThemeSwitcher
         theme={theme}
         onChange={onThemeChange}
