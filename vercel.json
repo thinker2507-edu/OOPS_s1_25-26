@@ -6,11 +6,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://relay-ik6x.onrender.com/api/:path*"
+      "destination": "https://relay-vercel.onrender.com/api/:path*"
     },
     {
       "source": "/auth/google/callback",
-      "destination": "https://relay-ik6x.onrender.com/auth/google/callback"
+      "destination": "https://relay-vercel.onrender.com/auth/google/callback"
     },
     {
       "source": "/((?!api/|auth/|src/|styles/|vendor/|.*\\.[^/]+$).*)",
