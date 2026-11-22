@@ -1,0 +1,39 @@
+{
+  "name": "relay-itsm",
+  "version": "3.0.0",
+  "private": true,
+  "description": "React + Node.js + MongoDB ITSM application",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "node scripts/build-frontend.cjs",
+    "format": "node scripts/format.cjs",
+    "start": "node server.cjs",
+    "test": "node scripts/test.cjs",
+    "test:browser": "node scripts/browser-check.cjs",
+    "test:seed-browser": "node scripts/browser-check.cjs --seed-data",
+    "test:google-browser": "node scripts/browser-check.cjs --google-account",
+    "backup": "node scripts/backup.cjs",
+    "db:setup": "node database_schema/setup.cjs",
+    "db:check": "node database_schema/check.cjs",
+    "db:cloud-init": "node database_schema/cloud-initialize.cjs",
+    "db:reset": "node database_schema/reset-and-seed.cjs",
+    "migrate:sqlite": "node scripts/migrate-sqlite.cjs",
+    "test:mongodb": "node scripts/test-mongodb.cjs",
+    "google:configure": "node scripts/configure-google.cjs"
+  },
+  "dependencies": {
+    "mongodb": "6.20.0"
+  },
+  "bundledFrontend": {
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "path": "frontend/public/vendor"
+  },
+  "bundledTooling": {
+    "typescript": "6.0.3",
+    "path": "tools/vendor/typescript",
+    "purpose": "Offline JSX build and source formatting"
+  }
+}

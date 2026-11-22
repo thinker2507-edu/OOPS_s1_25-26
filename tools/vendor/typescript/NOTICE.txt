@@ -1,0 +1,10 @@
+TypeScript compiler 6.0.3 - Copyright Microsoft Corporation.
+License: Apache-2.0. The adjacent LICENSE.txt is the unmodified Apache 2.0 license.
+Upstream: https://github.com/microsoft/TypeScript
+Only the open-source compiler file from the installed VS Code TypeScript distribution
+is included. No editor/application-specific modules are included.
+Used only by local JSX build/format tooling; never shipped to the browser.
+This offline copy avoids a package download during project startup. Replace with a
+reviewed official npm TypeScript package when package installation is available.
+
+SHA256: 569177652966bd528c319171c7dd22860dbf72bde116cbc4f644f1d02bb12e39

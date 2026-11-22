@@ -1,0 +1,60 @@
+name: relay-itsm
+services:
+  mongo:
+    image: mongo:8.0
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.adminCommand({ping:1}).ok ? 0 : 1)"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+    restart: "no"
+  mongo-init:
+    image: mongo:8.0
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./database_schema/init-replica.js:/init-replica.js:ro
+    entrypoint: ["mongosh", "--host", "mongo:27017", "--quiet", "--file", "/init-replica.js"]
+    restart: "no"
+  app:
+    build: .
+    init: true
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 3000
+      APP_DATA_DIR: data
+      APP_SEED_SAMPLES: ${APP_SEED_SAMPLES:-false}
+      APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL:-admin@local.test}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-RelayLocal!2026}
+      APP_COOKIE_SECURE: "false"
+      APP_SESSION_HOURS: ${APP_SESSION_HOURS:-12}
+      APP_MONITOR_SECONDS: ${APP_MONITOR_SECONDS:-15}
+      MONGODB_URI: mongodb://mongo:27017/?replicaSet=rs0
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-relay}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://127.0.0.1:3000/auth/google/callback}
+    volumes:
+      - app-data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    stop_grace_period: 15s
+    restart: "no"
+volumes:
+  mongo-data:
+  app-data:

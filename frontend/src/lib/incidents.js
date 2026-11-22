@@ -1,0 +1,2 @@
+const FINISHED_UI = ['RESOLVED', 'VERIFIED', 'CLOSED'];
+export { FINISHED_UI };

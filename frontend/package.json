@@ -1,0 +1,6 @@
+{
+  "name": "relay-frontend",
+  "private": true,
+  "type": "module",
+  "description": "React source modules; build and install commands are run from the project root."
+}

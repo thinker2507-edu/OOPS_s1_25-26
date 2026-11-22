@@ -1,0 +1,10 @@
+react-runtime.js contains only MIT-licensed React 19.2.7, React DOM 19.2.7,
+and Scheduler modules, plus a small CommonJS loader exposing React/ReactDOM.
+The modules were recovered from an existing installed distribution because
+network access was unavailable. No application-specific modules are included.
+Upstream: https://github.com/facebook/react . See LICENSE.txt.
+This runtime is included so the application works offline without npm.
+For upgrades, replace it with a reviewed official react + react-dom/client
+bundle and update package.json. Keep this license and verify all workflows.
+
+SHA256 (reviewed local asset): 0058b01e3526a9959611ee942ad4bd01f5e3b76816b718d5832ae954515c2e9b

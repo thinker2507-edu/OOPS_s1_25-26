@@ -1,0 +1,81 @@
+# Private configuration. Publish the blank/template settings, never real secrets.
+.env
+.env.*
+!.env.example
+secrets/
+.secrets/
+*client_secret*.json
+credentials.json
+google-oauth.json
+*service-account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Dependencies, generated frontend files and local runtime/backup data.
+node_modules/
+/frontend/dist/
+/data/
+/backups/
+*.sqlite3
+*.sqlite3-*
+*.db
+*.bson
+*.dump
+*.eml
+*.log
+*.tmp
+coverage/
+.nyc_output/
+
+# Machine/editor/assistant state; deployment definitions remain included.
+.vscode/
+.idea/
+.vercel/
+.render/
+.aws/
+.codex/
+.agents/
+.venv/
+.tools/
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db
+/AGENTS.[mM][dD]
+/diagnose-environment.bat
+/repair-environment.bat
+/environment-diagnostic.txt
+/git-owner-before.txt
+
+# Superseded implementations and local development/reference material.
+# Keep active application source, schema, deployment files and running guides.
+/legacy/
+/app/
+/problem/
+/extract_brief.py
+/changes.md
+
+# Local report and development verification material, excluded from submission.
+/report/
+/tests/
+/bugs/
+/scripts/test*.cjs
+/scripts/browser-check.cjs
+
+# Only the compiler needed by the deployed frontend build belongs under tools/.
+# Removing this exception breaks scripts/build-frontend.cjs and Dockerfile.
+/tools/*
+!/tools/vendor/
+/tools/vendor/*
+!/tools/vendor/typescript/
+
+# Local-only documentation.
+/docs/
+
+# Documentation and optional launchers remain local. Only start.bat is submitted.
+*.[mM][dD]
+*.[bB][aA][tT]
+*.[sS][hH]
+!/start.bat

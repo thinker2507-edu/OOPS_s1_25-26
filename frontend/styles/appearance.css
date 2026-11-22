@@ -1,0 +1,229 @@
+:root {
+  color-scheme: light;
+  --muted: #6b6278;
+  --accent-text: #624CAB;
+  --focus-ring: #624CAB;
+  --control-border: #887e95;
+  --surface-active: #efebf9;
+  --surface-subtle: #f0ecf9;
+  --surface-warning: #fff3d1;
+  --text-warning: #755700;
+  --warning-border: #a17c1f;
+  --surface-info: #e5f0fb;
+  --text-info: #365a7b;
+  --surface-success: #eaf1ec;
+  --text-success: #3f5e49;
+  --surface-danger: #fbe9e7;
+  --text-danger: #9b2d24;
+  --toast-bg: #1F1300;
+  --toast-text: #fff;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #17131f;
+  --card: #231d2d;
+  --ink: #f0eaf7;
+  --muted: #bdb3cc;
+  --border: #51465f;
+  --control-border: #8d7f9d;
+  --accent-text: #cab6ff;
+  --focus-ring: #E3B23C;
+  --surface-active: #392d50;
+  --surface-subtle: #30263f;
+  --surface-warning: #3c3018;
+  --text-warning: #f4d476;
+  --warning-border: #b89c45;
+  --surface-info: #203447;
+  --text-info: #b7dafa;
+  --surface-success: #22392d;
+  --text-success: #b5dbc2;
+  --surface-danger: #43242b;
+  --text-danger: #ffb6ae;
+  --toast-bg: #f0eaf7;
+  --toast-text: #1F1300;
+}
+:root.contrast:not([data-theme="dark"]) {
+  --bg: #fff;
+  --card: #fff;
+  --ink: #000;
+  --muted: #242026;
+  --border: #62576b;
+  --control-border: #4b4054;
+  --purple: #442882;
+  --accent-text: #442882;
+  --focus-ring: #442882;
+  --surface-active: #e7dff5;
+  --surface-subtle: #f0eaf8;
+  --text-warning: #513b00;
+  --text-info: #163e63;
+  --text-success: #1b422b;
+  --text-danger: #761a12;
+}
+:root[data-theme="dark"].contrast {
+  --bg: #08060c;
+  --card: #100d16;
+  --ink: #fff;
+  --muted: #e3daee;
+  --border: #a79ab9;
+  --control-border: #d3c5e6;
+  --purple: #442882;
+  --accent-text: #e0d0ff;
+  --focus-ring: #ffe082;
+  --surface-active: #30213f;
+  --surface-subtle: #24192f;
+  --surface-warning: #2b2109;
+  --text-warning: #ffe38e;
+  --surface-info: #142637;
+  --text-info: #d0e8ff;
+  --surface-success: #162b1d;
+  --text-success: #c4f0d2;
+  --surface-danger: #30141b;
+  --text-danger: #ffd1cb;
+}
+body {
+  line-height: 1.5;
+}
+.btn, input, select, textarea {
+  border-color: var(--control-border);
+}
+.bar-fill {
+  background: var(--accent-text);
+}
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--purple);
+}
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--control-border);
+  border-radius: 12px;
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.theme-switch .theme-option {
+  width: auto;
+  margin: 0;
+  min-width: 76px;
+  min-height: 44px;
+  padding: 7px 10px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+.theme-switch .theme-option[aria-pressed="true"] {
+  background: var(--surface-active);
+  border-color: var(--accent-text);
+  color: var(--ink);
+  font-weight: 750;
+}
+.theme-option svg {
+  flex-shrink: 0;
+}
+.login-appearance, .public-theme {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+.topbar {
+  flex-wrap: wrap;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.topbar-actions {
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 100%;
+}
+.preference-group {
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 0;
+}
+.preference-group legend {
+  padding: 0 7px;
+  font-weight: 700;
+}
+.preference-group > .field {
+  max-width: 480px;
+  margin-bottom: 18px;
+}
+.preference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 28px;
+}
+.preference-row {
+  min-width: 0;
+}
+.preference-row .check {
+  min-height: 40px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.preference-row input {
+  flex-shrink: 0;
+}
+.preference-row .help {
+  margin: 4px 0 0 32px;
+}
+.preference-footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.readable-spacing main, .readable-spacing .login-box {
+  line-height: 1.8;
+  letter-spacing: .035em;
+  word-spacing: .08em;
+}
+.readable-spacing main p, .readable-spacing main .help, .readable-spacing .login-box p, .readable-spacing td {
+  line-height: 1.8;
+}
+.underline-links a {
+  text-decoration: underline;
+  text-decoration-thickness: .1em;
+  text-underline-offset: .2em;
+}
+.large-targets .btn, .large-targets button, .large-targets select, .large-targets input:not([type="checkbox"]):not([type="radio"]), .large-targets .section-nav a, .large-targets .page-tabs a {
+  min-height: 48px;
+}
+.large-targets .check {
+  min-height: 48px;
+}
+.large-targets input[type="checkbox"], .large-targets input[type="radio"] {
+  width: 24px;
+  height: 24px;
+}
+.strong-focus *:focus-visible {
+  outline: 4px solid var(--focus-ring);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 2px var(--card);
+}
+@media (max-width: 760px) {
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .preference-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .preference-group {
+    padding: 14px;
+  }
+  .theme-switch .theme-option {
+    min-width: 68px;
+  }
+}
+@media (forced-colors: active) {
+  .theme-option[aria-pressed="true"] {
+    border: 2px solid Highlight;
+  }
+  *:focus-visible {
+    outline: 3px solid Highlight;
+  }
+}

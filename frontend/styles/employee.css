@@ -1,0 +1,314 @@
+.employee-dashboard, .employee-detail {
+  max-width: 1100px;
+}
+.incident-list-actions {
+  margin-bottom: 16px;
+}
+.sidebar-bottom .user > div {
+  min-width: 0;
+}
+.sidebar-bottom .user a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 4px 0;
+}
+.sidebar-bottom .avatar {
+  flex-shrink: 0;
+}
+.sidebar-bottom .employee-logout, .sidebar-bottom .account-logout {
+  width: auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+}
+.large-targets .sidebar-bottom .employee-logout, .large-targets .sidebar-bottom .account-logout, .large-targets .sidebar-bottom .user a {
+  min-height: 48px;
+}
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.employee-incidents {
+  min-width: 720px;
+}
+.employee-dashboard > .report-cta {
+  margin-bottom: 24px;
+}
+.employee-dashboard .card, .employee-detail .card {
+  margin-bottom: 20px;
+}
+.employee-filters {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.employee-incidents td {
+  vertical-align: top;
+}
+.incident-list-title {
+  display: block;
+  margin-top: 6px;
+  max-width: 320px;
+  white-space: normal;
+}
+.pagination, .request-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pagination {
+  margin-top: 16px;
+}
+.employee-logout {
+  border: 0;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  min-height: 44px;
+}
+.support-request {
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0;
+  overflow-wrap: anywhere;
+}
+.support-request:last-child {
+  border-bottom: 0;
+}
+.support-response {
+  border-left: 3px solid var(--border);
+  margin: 16px 0 0;
+  padding-left: 14px;
+}
+.attachment-list {
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+.attachment-list li {
+  margin: 8px 0;
+}
+.employee-metadata {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0 0 24px;
+}
+.employee-metadata dt {
+  color: var(--muted);
+  font-size: .9rem;
+}
+.employee-metadata dd {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
+.lifecycle-tracker {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 16px;
+}
+.lifecycle-tracker li {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.lifecycle-tracker small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+}
+.lifecycle-tracker .current {
+  border: 2px solid var(--accent-text);
+  background: var(--surface-active);
+}
+.lifecycle-tracker .completed {
+  background: var(--surface-success);
+}
+.lifecycle-tracker .upcoming {
+  color: var(--muted);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.badge.new {
+  background: #e2edff;
+  color: #174e93;
+}
+.badge.classified {
+  background: #e8eaff;
+  color: #393da0;
+}
+.badge.assigned {
+  background: #efe7fc;
+  color: #624097;
+}
+.badge.acknowledged {
+  background: #d7f4fa;
+  color: #125c6c;
+}
+.badge.in_progress, .badge.waiting, .badge.pending {
+  background: #fff0cf;
+  color: #725000;
+}
+.badge.resolved {
+  background: #d9f3ed;
+  color: #116354;
+}
+.badge.verified, .badge.responded {
+  background: #e1f1df;
+  color: #2b612b;
+}
+.badge.closed {
+  background: #ececf0;
+  color: #50505c;
+}
+:root[data-theme="dark"] .badge.new {
+  background: #183250;
+  color: #b3d4ff;
+}
+:root[data-theme="dark"] .badge.classified {
+  background: #2d2b56;
+  color: #c8c8ff;
+}
+:root[data-theme="dark"] .badge.assigned {
+  background: #39294e;
+  color: #dcc0ff;
+}
+:root[data-theme="dark"] .badge.acknowledged {
+  background: #153b43;
+  color: #a7e5ef;
+}
+:root[data-theme="dark"] .badge.in_progress, :root[data-theme="dark"] .badge.waiting, :root[data-theme="dark"] .badge.pending {
+  background: #443413;
+  color: #f7d886;
+}
+:root[data-theme="dark"] .badge.resolved {
+  background: #163d34;
+  color: #a7e6d7;
+}
+:root[data-theme="dark"] .badge.verified, :root[data-theme="dark"] .badge.responded {
+  background: #263d24;
+  color: #bee4b6;
+}
+:root[data-theme="dark"] .badge.closed {
+  background: #34343c;
+  color: #dddded;
+}
+:root.contrast .badge {
+  border: 1px solid currentColor;
+}
+:root.contrast:not([data-theme="dark"]) .badge {
+  color: #16101e;
+}
+:root.contrast[data-theme="dark"] .badge {
+  color: #fff;
+}
+@media(max-width: 900px) {
+  .employee-filters {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+  .lifecycle-tracker {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width: 520px) {
+  .employee-filters {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .employee-metadata {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+  .lifecycle-tracker li {
+    padding: 8px;
+    font-size: .85rem;
+  }
+  .employee-detail .page-tabs {
+    overflow-x: auto;
+  }
+}
+@media(max-width:760px) {
+  .employee-incidents {
+    min-width: 0;
+  }
+  .employee-incidents thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .employee-incidents tbody, .employee-incidents tr, .employee-incidents td {
+    display: block;
+    width: 100%;
+  }
+  .employee-incidents tr {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .employee-incidents tr:last-child {
+    border-bottom: 0;
+  }
+  .employee-incidents td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 0;
+    border: 0;
+    white-space: normal;
+  }
+  .employee-incidents td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .employee-incidents td:first-child {
+    display: block;
+  }
+  .employee-incidents td:first-child::before {
+    content: none;
+  }
+}
+.technician-workspace .card {
+  margin-bottom: 20px;
+}
+.technician-workspace progress, .workload-count + progress {
+  width: 100%;
+  height: 14px;
+  margin-bottom: 24px;
+  accent-color: var(--purple);
+}
+.workload-count strong {
+  font-size: 1.8rem;
+}
+.audit-detail {
+  white-space: normal;
+  min-width: 220px;
+  max-width: 520px;
+  overflow-wrap: anywhere;
+}
+.audit-detail small {
+  display: block;
+  margin-top: 6px;
+}
+.api-response {
+  max-height: 32rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: .875rem;
+  line-height: 1.6;
+}
