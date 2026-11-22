@@ -9,6 +9,7 @@ class MongoRepository {
     this.database = database;
     this.context = new AsyncLocalStorage();
     this.queue = Promise.resolve();
+    this.scopedReads = new Set();
     this.provider = 'mongodb';
   }
   static async connect(config) {
@@ -36,7 +37,11 @@ class MongoRepository {
     }
     catch (error) {
       await client.close();
-      throw new DatabaseFailureError('Cannot connect to a MongoDB replica set. Start your local MongoDB replica set or optional Docker database and check MONGODB_URI. See docs/LOCAL_MONGODB.md. ' + (error.message.includes('replica set is required') ? 'A standalone MongoDB process must be configured as a replica set.' : ''));
+      const failure = new DatabaseFailureError('Cannot connect to a MongoDB replica set. Start your local MongoDB replica set or optional Docker database and check MONGODB_URI. See docs/LOCAL_MONGODB.md. ' + (error.message.includes('replica set is required') ? 'A standalone MongoDB process must be configured as a replica set.' : ''));
+      // Preserve driver classification for safe CLI diagnostics without serializing
+      // raw errors (which may include private connection details) in API responses.
+      Object.defineProperty(failure, 'cause', { value: error });
+      throw failure;
     }
   }
   async initialize() {
@@ -73,11 +78,14 @@ class MongoRepository {
   transaction(operation) {
     return this.perform(operation, true);
   }
-  read(operation) {
-    return this.perform(operation, false);
+  read(operation, { collections = Object.keys(KEYS) } = {}) {
+    if (!Array.isArray(collections) || collections.some(table => !Object.hasOwn(KEYS, table))) {
+      throw new Error('Unknown collection in read scope.');
+    }
+    return this.perform(operation, false, [...new Set(collections)]);
   }
-  perform(operation, write) {
-    const task = this.queue.then(async () => {
+  perform(operation, write, collections = Object.keys(KEYS)) {
+    const run = async () => {
       const session = this.client.startSession();
       try {
         return await session.withTransaction(async () => {
@@ -86,8 +94,8 @@ class MongoRepository {
           if (write) {
             await this.database.collection('_meta').updateOne({ _id: 'workspace' }, { $inc: { revision: 1 } }, { session });
           }
-          const before = {};
-          for (const table of Object.keys(KEYS))
+          const before = Object.fromEntries(Object.keys(KEYS).map(table => [table, []]));
+          for (const table of collections)
             before[table] = (await this.database.collection(table).find({}, { session }).toArray()).map(({ _id, ...row }) => row);
           const store = new DocumentStore(before);
           const result = this.context.run(store, () => operation(this));
@@ -117,9 +125,20 @@ class MongoRepository {
       finally {
         await session.endSession();
       }
-    });
-    this.queue = task.catch(() => {
-    });
+    };
+    // Small authentication/configuration snapshots must not queue behind unrelated
+    // background work. Their own MongoDB transaction still supplies a consistent
+    // read-only snapshot; writes retain the existing serialization and lock.
+    const scoped = !write && collections.length < Object.keys(KEYS).length;
+    const task = scoped ? run() : this.queue.then(run);
+    if (scoped) {
+      this.scopedReads.add(task);
+      task.then(() => this.scopedReads.delete(task), () => this.scopedReads.delete(task));
+    }
+    else {
+      this.queue = task.catch(() => {
+      });
+    }
     return task;
   }
   async flush(before, after, session) {
@@ -226,6 +245,7 @@ class MongoRepository {
   }
   async close() {
     await this.queue;
+    await Promise.allSettled([...this.scopedReads]);
     await this.client.close();
   }
 }

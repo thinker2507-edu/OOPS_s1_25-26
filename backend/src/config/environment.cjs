@@ -40,13 +40,20 @@ function configuration(root = ROOT, environment = process.env) {
       }
     }
     for (const key of ['APP_BASE_URL', 'APP_API_URL']) {
-      const url = new URL(config[key]);
+      let url;
+      try {
+        url = new URL(config[key]);
+      }
+      catch {
+        // Identify the setting without logging a possibly sensitive input value.
+        throw new Error(key + ' must be a complete HTTPS origin, such as https://your-service.example.com, without quotes or a trailing slash.');
+      }
       if (url.protocol !== 'https:' || url.origin !== config[key] || url.username || url.password) {
         throw new Error(key + ' must be an HTTPS origin without a trailing slash.');
       }
     }
     if (!/^[a-zA-Z0-9_-]+$/.test(config.MONGODB_DATABASE) || ['admin', 'local', 'config'].includes(config.MONGODB_DATABASE)) {
-      throw new Error('Choose a dedicated application database.');
+      throw Object.assign(new Error('MONGODB_DATABASE must name a dedicated application database using letters, numbers, underscores or hyphens.'), { code: 'CLOUD_DATABASE_NAME_INVALID' });
     }
     config.APP_COOKIE_SECURE = 'true';
     config.APP_HOST = '0.0.0.0';
@@ -56,10 +63,10 @@ function configuration(root = ROOT, environment = process.env) {
     config.APP_SEED_SAMPLES = 'false';
     config.EMAIL_DELIVERY_MODE = environment.EMAIL_DELIVERY_MODE || 'resend';
     if (config.EMAIL_DELIVERY_MODE !== 'resend') {
-      throw new Error('Cloud email delivery must use resend.');
+      throw Object.assign(new Error('EMAIL_DELIVERY_MODE must be resend in cloud mode.'), { code: 'CLOUD_EMAIL_MODE_INVALID' });
     }
     if (config.GOOGLE_CLIENT_ID && config.GOOGLE_REDIRECT_URI !== config.APP_BASE_URL + '/auth/google/callback') {
-      throw new Error('Google callback must use APP_BASE_URL/auth/google/callback.');
+      throw Object.assign(new Error('GOOGLE_REDIRECT_URI must equal APP_BASE_URL followed by /auth/google/callback.'), { code: 'CLOUD_GOOGLE_CALLBACK_INVALID' });
     }
   }
   return config;

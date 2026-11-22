@@ -106,6 +106,10 @@ class WebServer {
   }
   async session(req, required = true) {
     const token = this.cookies(req).itsm_session || '';
+    if (!token) {
+      if (required) throw new AppError('Please sign in.', 401);
+      return null;
+    }
     const session = await this.service.repo.read(repo => {
       const s = repo.one('sessions', s => s.token === token && s.expires > now() && ['password', 'google'].includes(s.auth_method));
       const u = s ? repo.one('users', u => u.id === s.user_id && u.active) : null;
@@ -115,7 +119,7 @@ class WebServer {
         email: u.email,
         role: u.role
       } : null;
-    });
+    }, { collections: ['sessions', 'users'] });
     if (!session && required) {
       throw new AppError('Please sign in.', 401);
     }
@@ -209,7 +213,7 @@ class WebServer {
       url = new URL(req.url, 'http://localhost');
       this.checkHost(req);
       if (this.config.APP_CLOUD === 'true' && !['/api/health', '/api/ready'].includes(url.pathname)) {
-        const initialized = await this.service.repo.read(repo => Boolean(repo.one('settings', s => s.key === 'cloud_initialized')));
+        const initialized = await this.service.repo.read(repo => Boolean(repo.one('settings', s => s.key === 'cloud_initialized')), { collections: ['settings'] });
         if (!initialized) {
           throw new AppError('This workspace is not available yet. Please contact your administrator.', 503, 'CLOUD_NOT_INITIALIZED');
         }

@@ -94,7 +94,7 @@ function App() {
     refresh();
   }, []);
   useEffect(() => {
-    if (stopped) {
+    if (stopped || !data) {
       return;
     }
     const timer = setInterval(() => {
@@ -105,7 +105,7 @@ function App() {
     const visible = () => { if (!document.hidden) refresh(); };
     document.addEventListener('visibilitychange', visible);
     return () => { clearInterval(timer); document.removeEventListener('visibilitychange', visible); };
-  }, [stopped]);
+  }, [stopped, data?.user.id]);
   useEffect(() => {
     if (!loading && !stopped) {
       if (!data && ![
